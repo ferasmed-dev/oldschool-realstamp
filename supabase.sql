@@ -85,7 +85,7 @@ returns json language sql security definer set search_path = public as $$
 $$;
 
 create or replace function public._norm_contact(p text)
-returns text language plpgsql immutable as $$
+returns text language plpgsql immutable set search_path = public as $$
 declare v text := trim(coalesce(p, ''));
 begin
   if position('@' in v) > 0 then return lower(v); end if;
@@ -178,7 +178,7 @@ end $$;
 
 -- Owner dashboard numbers. A "night" runs until 6:00 Madrid time.
 create or replace function public.owner_stats(p_bar text, p_pin text)
-returns json language plpgsql stable security definer set search_path = public as $$
+returns json language plpgsql security definer set search_path = public as $$
 declare chk text; tz text := 'Europe/Madrid'; today date; r json;
 begin
   chk := public._check_pin(p_bar, p_pin, true);
@@ -215,7 +215,7 @@ end $$;
 
 -- Member list: who comes, how often, last visit. Contact shown only if they accepted offers.
 create or replace function public.owner_members(p_bar text, p_pin text)
-returns json language plpgsql stable security definer set search_path = public as $$
+returns json language plpgsql security definer set search_path = public as $$
 declare chk text;
 begin
   chk := public._check_pin(p_bar, p_pin, true);
@@ -278,6 +278,12 @@ end $$;
 revoke execute on function public._check_pin(text, text, boolean) from public, anon, authenticated;
 revoke execute on function public._card_json(uuid)                from public, anon, authenticated;
 revoke execute on function public._norm_contact(text)             from public, anon, authenticated;
+revoke execute on function
+  public.bar_info(text), public.join_card(text, text, text, boolean, boolean), public.get_card(uuid),
+  public.add_stamp(uuid, text), public.redeem(uuid, text), public.owner_stats(text, text),
+  public.owner_members(text, text), public.owner_update(text, text, text, int, text),
+  public.find_card(text, text), public.owner_delete_card(text, text, uuid)
+from public, authenticated;
 grant execute on function
   public.bar_info(text),
   public.join_card(text, text, text, boolean, boolean),
@@ -292,11 +298,15 @@ grant execute on function
 to anon;
 
 -- ---------- First bar ----------
--- CHANGE BOTH PINS before going live: staff PIN (4–6 digits), owner PIN (6 digits).
+-- Starts with random, unusable PINs. Set the real ones right after (not stored in this file):
+--   update public.bars set
+--     staff_pin_hash = extensions.crypt('STAFF_PIN', extensions.gen_salt('bf')),
+--     owner_pin_hash = extensions.crypt('OWNER_PIN', extensions.gen_salt('bf'))
+--   where slug = 'old-school';
 insert into public.bars (slug, name, reward, stamps_needed, cooldown_minutes, staff_pin_hash, owner_pin_hash)
 values ('old-school', 'Old School Pub', 'Jarra gratis', 5, 180,
-        extensions.crypt('1234',   extensions.gen_salt('bf')),
-        extensions.crypt('246810', extensions.gen_salt('bf')))
+        extensions.crypt(encode(extensions.gen_random_bytes(16), 'hex'), extensions.gen_salt('bf')),
+        extensions.crypt(encode(extensions.gen_random_bytes(16), 'hex'), extensions.gen_salt('bf')))
 on conflict (slug) do nothing;
 
 -- To add another bar later, copy the insert above with a new slug, name and PINs.

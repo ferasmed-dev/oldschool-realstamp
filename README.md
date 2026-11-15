@@ -13,10 +13,14 @@ Supabase database.
 | `supabase.sql` | The whole database: tables, security and functions. Run it once |
 | `config.js` | Supabase URL + anon key |
 
-## Setup
+## Status
+Database set up on Supabase project `zslyuvbewbeaxvalqokr` (schema applied and tested, PINs set).
+PINs are never stored in this repo.
+
+## Setup (for a new project)
 1. Supabase: **New project** (EU region).
 2. **SQL Editor →** paste `supabase.sql` → **Run**.
-3. Change the starting PINs (staff `1234`, owner `246810`):
+3. Set the PINs (the file starts with random, unusable ones):
    ```sql
    update bars set
      staff_pin_hash = extensions.crypt('NEW_STAFF_PIN', extensions.gen_salt('bf')),
