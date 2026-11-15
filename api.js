@@ -30,6 +30,7 @@
       clearTimeout(timer);
     }
     if (r.status === 404) return { ok: false, error: "not_setup" };      // SQL file not run yet
+    if (r.status === 400 && /^(get_card|add_stamp|redeem)$/.test(fn)) return { ok: false, error: "not_found" };  // bad card id
     if (r.status === 401 || r.status === 403) return { ok: false, error: "bad_key" };
     if (!r.ok) return { ok: false, error: "server" };
     try { return await r.json(); } catch (e) { return { ok: false, error: "server" }; }

@@ -241,7 +241,9 @@ const $ = id => document.getElementById(id);
 const S = API.store;
 const params = new URLSearchParams(location.search);
 const BAR = (params.get("bar") || (window.STAMP_CONFIG||{}).DEFAULT_BAR || "old-school").toLowerCase();
-const KEY = "stampcard:" + BAR;
+const KEY = "realstamp:card:" + BAR;   // separate from the old demo on the same site
+const isUuid = v => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v || "");
+try { localStorage.removeItem("stampcard:" + BAR); } catch(e){}
 let lang = S.get("stampcard:lang") || ((navigator.language||"").toLowerCase().startsWith("es") ? "es" : "en");
 let bar = {name:"Old School Pub", reward:"Jarra gratis", stamps_needed:5};
 let card = null, pinMode = "stamp", pin = "", busy = false;
@@ -402,7 +404,7 @@ $("retryBtn").onclick = () => { show("vLoading"); init(); };
 
 // ---- start ----
 async function refresh(){
-  const id = S.get(KEY); if (!id) return;
+  const id = S.get(KEY); if (!isUuid(id)) return;
   const r = await API.call("get_card", {p_card: id});
   if (r.ok){ card = r.card; renderCard(false); }
 }
@@ -413,7 +415,8 @@ async function init(){
   const b = await API.call("bar_info", {p_bar: BAR});
   if (!b.ok) return showError(b);
   bar = b; applyLang();
-  const id = S.get(KEY);
+  let id = S.get(KEY);
+  if (id && !isUuid(id)){ S.del(KEY); id = null; }
   if (id){
     const r = await API.call("get_card", {p_card: id});
     if (r.ok){ card = r.card; renderCard(false); show("vCard"); return; }
