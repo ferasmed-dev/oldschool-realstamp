@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="config.js"></script>
 <script src="api.js"></script>
+<script src="rewards.js"></script>
 <style>
   :root{--bg:#16110d;--bg2:#211913;--bg3:#2c2219;--paper:#f2e6cc;--ink:#2a1d14;--amber:#e9a23b;--red:#a3311f;--muted:#a8957a;--line:#3a2d22;--good:#7fb069}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -50,6 +51,13 @@
   .pill{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--bg3);color:var(--muted)}
   .pill.g{background:#2b3a22;color:#b9dca6} .pill.a{background:#3b2a12;color:#f5d29a} .pill.r{background:#3a1d17;color:#ffb3a1}
   .muted{color:var(--muted);font-size:13px}
+  .rewards{display:grid;gap:8px}
+  .rw{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;background:var(--bg3);border:1.5px solid var(--line);
+      border-radius:12px;padding:12px;color:var(--paper);cursor:pointer;font:15px "DM Sans"}
+  .rw .ic{font-size:24px;line-height:1}
+  .rw b{display:block;font-weight:700} .rw small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+  .rw .st{margin-left:auto;flex:none;font-size:12px;color:var(--muted);white-space:nowrap}
+  .rw.on{border-color:var(--amber);background:#3b2a12} .rw.on .st{color:var(--amber)}
   .del{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;font:500 12px "DM Sans";cursor:pointer}
   .del.sure{border-color:#ff8a70;color:#ff8a70}
   .hidden{display:none!important}
@@ -115,8 +123,9 @@
 
     <div class="panel">
       <h2>Ajustes</h2>
-      <label for="sReward">Premio</label><input id="sReward" maxlength="60">
-      <label for="sNeeded">Sellos para el premio</label>
+      <label>Premio de la tarjeta</label>
+      <div class="rewards" id="sRewards" role="radiogroup"></div>
+      <label for="sNeeded">Sellos para el premio <span class="muted" id="sRec"></span></label>
       <select id="sNeeded"></select>
       <label for="sPin">Nuevo PIN de camareros (4–6 cifras, déjalo vacío para no cambiarlo)</label>
       <input id="sPin" inputmode="numeric" maxlength="6">
@@ -189,7 +198,7 @@ function render(){
   $("tiles").innerHTML = tiles.map(([v,l]) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`).join("");
   drawChart(s.daily);
   drawTabs(); drawRows();
-  $("sReward").value = s.bar.reward;
+  selReward = s.bar.reward; drawRewards();
   $("sNeeded").innerHTML = Array.from({length:19},(_,i)=>i+2).map(n=>`<option ${n===s.bar.stamps_needed?"selected":""}>${n}</option>`).join("");
   drawQR();
 }
@@ -299,9 +308,21 @@ function drawQR(){
 window.addEventListener("resize", () => { if (stats) drawChart(stats.daily); });
 $("printBtn").onclick = () => { try { window.print(); } catch(e){} };
 
+let selReward = null;
+function drawRewards(){
+  const box = $("sRewards");
+  box.innerHTML = REWARDS.map(r => `<button type="button" class="rw ${r.es===selReward?"on":""}" role="radio" aria-checked="${r.es===selReward}" data-id="${r.id}">
+      <span class="ic">${r.icon}</span><span><b>${esc(r.es)}</b><small>${esc(r.hint)}</small></span><span class="st">${r.stamps} sellos</span></button>`).join("");
+  box.querySelectorAll(".rw").forEach(b => b.onclick = () => {
+    const r = REWARDS.find(x => x.id === b.dataset.id);
+    selReward = r.es; $("sNeeded").value = String(r.stamps); drawRewards();
+  });
+  const cur = REWARDS.find(x => x.es === selReward);
+  $("sRec").textContent = cur ? `(recomendado: ${cur.stamps})` : "";
+}
 $("saveBtn").onclick = async () => {
   $("setErr").textContent = ""; $("setOk").classList.add("hidden");
-  const r = await API.call("owner_update", {p_bar:BAR, p_pin:PIN, p_reward:$("sReward").value,
+  const r = await API.call("owner_update", {p_bar:BAR, p_pin:PIN, p_reward:selReward,
     p_stamps_needed:+$("sNeeded").value, p_new_staff_pin:$("sPin").value.trim() || null});
   if (!r.ok) return $("setErr").textContent = errMsg(r.error);
   $("sPin").value = ""; $("setOk").classList.remove("hidden"); load();

@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="api.js"></script>
+<script src="rewards.js"></script>
 <style>
   :root{
     --bg:#16110d; --bg2:#211913; --paper:#f2e6cc; --paper2:#e6d6b2; --ink:#2a1d14;
@@ -258,7 +259,7 @@ function applyLang(){
   document.querySelectorAll("[data-t]").forEach(el => {
     const k = el.dataset.t; el.innerHTML = t(k, {bar: esc(bar.name)});
   });
-  $("joinSub").textContent = t("joinSub", {n: bar.stamps_needed, r: bar.reward});
+  $("joinSub").textContent = t("joinSub", {n: bar.stamps_needed, r: rewardText(bar.reward, lang)});
   $("barName").textContent = bar.name;
   if (card) renderCard(false);
   renderInstall();
@@ -275,7 +276,7 @@ const GIFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 function renderCard(animateNew){
   const n = card.stamps_needed, k = card.stamps;
   $("hello").textContent = t("hello", {name: card.name});
-  $("rule").textContent = t("rule", {n, r: card.reward});
+  $("rule").textContent = t("rule", {n, r: rewardText(card.reward, lang)});
   const g = $("grid"); g.className = "grid" + (n===6||n===9 ? " n6" : n===4||n===8 ? " n4" : "");
   g.innerHTML = "";
   for (let i = 0; i < n; i++){
@@ -290,7 +291,7 @@ function renderCard(animateNew){
   const left = n - k, full = left <= 0;
   $("progress").innerHTML = full ? "" : (left === 1 ? t("left1") : t("leftN", {k: left}));
   $("reward").classList.toggle("hidden", !full);
-  $("rewardTitle").textContent = t("full") + " " + card.reward;
+  $("rewardTitle").textContent = t("full") + " " + rewardText(card.reward, lang);
   $("stampBtn").classList.toggle("hidden", full);
   $("redeemBtn").classList.toggle("hidden", !full);
   $("earned").textContent = t("earned", {k: card.rewards_redeemed});

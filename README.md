@@ -12,6 +12,7 @@ Supabase database.
 | `owner.html` | Owner page: visits per night, customers (regulars, inactive 14+ days, reward ready), CSV, monthly report, QR poster, settings, delete a customer |
 | `supabase.sql` | The whole database: tables, security and functions. Run it once |
 | `config.js` | Supabase URL + anon key |
+| `rewards.js` | The 5 rewards the owner can choose from (edit this file to change the list) |
 
 ## Status
 Database set up on Supabase project `zslyuvbewbeaxvalqokr` (schema applied and tested, PINs set).
